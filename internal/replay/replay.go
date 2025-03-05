@@ -10,8 +10,7 @@ func ReplayEvents(es *eventstore.BaseEventStore, p *projection.Projection, aggre
 	if err != nil {
 		return err
 	}
-	for _, event := range events {
-		p.HandleEvent(event)
-	}
+	p.HandleEvents(events)
+
 	return nil
 }

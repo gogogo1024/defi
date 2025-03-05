@@ -1,44 +1,43 @@
 package main
 
 import (
-	"database/sql"
+	"defi/internal/config"
+	"defi/internal/db"
+	"defi/internal/eventbus"
 	"defi/internal/eventstore"
 	"defi/internal/model"
-	"github.com/Shopify/sarama"
-	_ "github.com/go-sql-driver/mysql"
 	"log"
 )
 
 func main() {
-	// Initialize the database connection
-	db, err := sql.Open("mysql", "user:password@/dbname")
+	cfg := config.LoadConfig()
+	database := db.InitDB()
+	defer database.Close()
+
+	store := &eventstore.BaseEventStore{Db: database}
+	mqEventBus := eventbus.InitEventBus(cfg)
+
+	publishEvent(mqEventBus)
+	consumeEvent(mqEventBus, store)
+}
+
+func publishEvent(mqEventBus eventbus.EventBus) {
+	err := mqEventBus.PublishEvent("example_topic", []byte("example_event"))
 	if err != nil {
-		log.Fatalf("Failed to connect to database: %v", err)
+		log.Fatalf("Failed to publish event: %v", err)
 	}
-	defer db.Close()
+}
 
-	store := &eventstore.BaseEventStore{Db: db}
-
-	// Initialize the Kafka consumer
-	consumer, err := sarama.NewConsumer([]string{"localhost:9092"}, nil)
-	if err != nil {
-		log.Fatalf("Failed to start Sarama consumer: %v", err)
-	}
-	defer consumer.Close()
-
-	partitionConsumer, err := consumer.ConsumePartition("example_topic", 0, sarama.OffsetNewest)
-	if err != nil {
-		log.Fatalf("Failed to start partition consumer: %v", err)
-	}
-	defer partitionConsumer.Close()
-
-	// Consume messages and save events to the database
-	for msg := range partitionConsumer.Messages() {
-		event := model.Event{
-			Data: string(msg.Value),
-		}
+func consumeEvent(mqEventBus eventbus.EventBus, store *eventstore.BaseEventStore) {
+	err := mqEventBus.ConsumerEvent("example_topic", func(event model.Event) {
+		log.Printf("Received event: %s", event.Data)
 		if err := store.SaveEvent(event); err != nil {
 			log.Printf("Failed to save event to database: %v", err)
+		} else {
+			log.Printf("Successfully saved event: %v", event)
 		}
+	})
+	if err != nil {
+		log.Fatalf("Failed to consume event: %v", err)
 	}
 }

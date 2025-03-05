@@ -10,7 +10,7 @@ type KafkaEventBus struct {
 	consumer sarama.Consumer
 }
 
-func NewKafkaEventBus(brokers []string) (*KafkaEventBus, error) {
+func NewKafkaEventBus(brokers []string) (EventBus, error) {
 	config := sarama.NewConfig()
 	config.Producer.Return.Successes = true
 	producer, err := sarama.NewSyncProducer(brokers, config)
@@ -32,7 +32,8 @@ func (eb *KafkaEventBus) PublishEvent(topic string, event []byte) error {
 	_, _, err := eb.producer.SendMessage(msg)
 	return err
 }
-func (eb *KafkaEventBus) Subscribe(topic string, handler func(event model.Event)) error {
+
+func (eb *KafkaEventBus) ConsumerEvent(topic string, handler func(event model.Event)) error {
 	partitionConsumer, err := eb.consumer.ConsumePartition(topic, 0, sarama.OffsetNewest)
 	if err != nil {
 		return err
