@@ -4,8 +4,11 @@ go 1.24
 
 require (
 	github.com/Shopify/sarama v1.30.0
+	github.com/bradfitz/gomemcache v0.0.0-20230905024940-24af94b03874
+	github.com/go-redis/redis/v8 v8.11.5
 	github.com/go-sql-driver/mysql v1.9.0
 	github.com/gorilla/mux v1.8.0
+	github.com/joho/godotenv v1.5.1
 	github.com/lib/pq v1.10.4
 	github.com/nacos-group/nacos-sdk-go v1.1.5
 	github.com/nats-io/nats.go v1.39.1
@@ -15,7 +18,9 @@ require (
 	filippo.io/edwards25519 v1.1.0 // indirect
 	github.com/aliyun/alibaba-cloud-sdk-go v1.61.18 // indirect
 	github.com/buger/jsonparser v1.1.1 // indirect
+	github.com/cespare/xxhash/v2 v2.1.2 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
+	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
 	github.com/eapache/go-resiliency v1.2.0 // indirect
 	github.com/eapache/go-xerial-snappy v0.0.0-20180814174437-776d5712da21 // indirect
 	github.com/eapache/queue v1.1.0 // indirect

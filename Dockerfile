@@ -1,14 +1,10 @@
-FROM ubuntu:latest
-LABEL authors="gogogo1024"
-
-ENTRYPOINT ["top", "-b"]
 # Use the official Golang image as the base image
-FROM golang:1.24.0
+FROM golang:latest
 
 # Set the Current Working Directory inside the container
 WORKDIR /app
 
-# Copy go.mod and go.sum files
+# Copy go mod and sum files
 COPY go.mod go.sum ./
 
 # Download all dependencies. Dependencies will be cached if the go.mod and go.sum files are not changed
@@ -17,8 +13,11 @@ RUN go mod download
 # Copy the source from the current directory to the Working Directory inside the container
 COPY . .
 
+# Ensure that the source files are copied correctly
+RUN ls -la /app
+
 # Build the Go app
-RUN go build -o main .
+RUN go build -o main ./cmd
 
 # Expose port 8080 to the outside world
 EXPOSE 8080
