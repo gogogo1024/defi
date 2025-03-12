@@ -10,6 +10,9 @@ type BaseEventStore struct {
 	Db *sql.DB
 }
 
+func InitEventStore(db *sql.DB) *BaseEventStore {
+	return &BaseEventStore{Db: db}
+}
 func (es *BaseEventStore) SaveEvent(event model.Event) error {
 	query := `INSERT INTO events (id, aggregate_id, type, data, timestamp) VALUES (?, ?, ?, ?, ?)`
 	_, err := es.Db.Exec(query, event.ID, event.AggregateID, event.Type, event.Data, event.Timestamp)

@@ -3,7 +3,6 @@ package eventbus
 import (
 	"defi/internal/config"
 	"defi/internal/model"
-	"log"
 )
 
 type EventBus interface {

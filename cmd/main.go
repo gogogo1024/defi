@@ -7,17 +7,9 @@ import (
 	"defi/internal/eventstore"
 	"defi/internal/model"
 	"log"
-	"os"
 )
 
 func main() {
-	// Set the APP_ENV environment variable
-	appEnv := os.Getenv("APP_ENV")
-	if appEnv == "" {
-		appEnv = "local" // Default to local if APP_ENV is not set
-		os.Setenv("APP_ENV", appEnv)
-	}
-
 	mqConfigs, dbConfigs, cacheConfigs, err := config.LoadConfig()
 	if err != nil {
 		log.Fatalf("Failed to load config: %v", err)
@@ -33,7 +25,7 @@ func main() {
 		}
 	}()
 
-	store := &eventstore.BaseEventStore{Db: database.SQL}
+	store := eventstore.InitEventStore(database.SQL)
 	mqEventBus := eventbus.InitEventBus(mqConfigs.Kafka)
 
 	publishEvent(mqEventBus)

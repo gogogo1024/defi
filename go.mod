@@ -4,7 +4,6 @@ go 1.24
 
 require (
 	github.com/Shopify/sarama v1.30.0
-	github.com/bradfitz/gomemcache v0.0.0-20230905024940-24af94b03874
 	github.com/go-redis/redis/v8 v8.11.5
 	github.com/go-sql-driver/mysql v1.9.0
 	github.com/gorilla/mux v1.8.0
@@ -12,6 +11,8 @@ require (
 	github.com/lib/pq v1.10.4
 	github.com/nacos-group/nacos-sdk-go v1.1.5
 	github.com/nats-io/nats.go v1.39.1
+	github.com/rainycape/memcache v0.0.0-20150622160815-1031fa0ce2f2
+	github.com/sirupsen/logrus v1.8.1
 )
 
 require (

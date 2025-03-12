@@ -1,26 +1,386 @@
 version: '3.8'
 
 services:
-  app:
-    build: .
-    ports:
-      - "8080:8080"
-    depends_on:
-      - nacos
-    environment:
-      - NACOS_SERVER=nacos:8848
-      - NACOS_NAMESPACE=public
-      - NACOS_LOG_DIR=/var/log/nacos
-      - NACOS_CACHE_DIR=/var/cache/nacos
-
-  nacos:
+  nacos-master1:
     image: nacos/nacos-server:latest
+    container_name: nacos-master1
     ports:
       - "8848:8848"
     environment:
-      MODE: standalone
+      - MODE=cluster
+      - NACOS_SERVERS=nacos-master1:8848 nacos-master2:8848 nacos-slave1:8848 nacos-slave2:8848 nacos-slave3:8848 nacos-slave4:8848
+      - MYSQL_SERVICE_HOST=mysql-master1
+      - MYSQL_SERVICE_PORT=3306
+      - MYSQL_SERVICE_DB_NAME=nacos
+      - MYSQL_SERVICE_USER=root
+      - MYSQL_SERVICE_PASSWORD=rootpassword
     volumes:
-      - nacos_data:/home/nacos/data
+      - nacos_master1_data:/home/nacos/data
+    depends_on:
+      - mysql-master1
 
+  nacos-master2:
+    image: nacos/nacos-server:latest
+    container_name: nacos-master2
+    ports:
+      - "8849:8848"
+    environment:
+      - MODE=cluster
+      - NACOS_SERVERS=nacos-master1:8848 nacos-master2:8848 nacos-slave1:8848 nacos-slave2:8848 nacos-slave3:8848 nacos-slave4:8848
+      - MYSQL_SERVICE_HOST=mysql-master1
+      - MYSQL_SERVICE_PORT=3306
+      - MYSQL_SERVICE_DB_NAME=nacos
+      - MYSQL_SERVICE_USER=root
+      - MYSQL_SERVICE_PASSWORD=rootpassword
+    volumes:
+      - nacos_master2_data:/home/nacos/data
+    depends_on:
+      - mysql-master2
+
+  nacos-slave1:
+    image: nacos/nacos-server:latest
+    container_name: nacos-slave1
+    ports:
+      - "8850:8848"
+    environment:
+      - MODE=cluster
+      - NACOS_SERVERS=nacos-master1:8848 nacos-master2:8848 nacos-slave1:8848 nacos-slave2:8848 nacos-slave3:8848 nacos-slave4:8848
+      - MYSQL_SERVICE_HOST=mysql-master1
+      - MYSQL_SERVICE_PORT=3306
+      - MYSQL_SERVICE_DB_NAME=nacos
+      - MYSQL_SERVICE_USER=root
+      - MYSQL_SERVICE_PASSWORD=rootpassword
+    volumes:
+      - nacos_slave1_data:/home/nacos/data
+    depends_on:
+      - mysql-master1
+
+  nacos-slave2:
+    image: nacos/nacos-server:latest
+    container_name: nacos-slave2
+    ports:
+      - "8851:8848"
+    environment:
+      - MODE=cluster
+      - NACOS_SERVERS=nacos-master1:8848 nacos-master2:8848 nacos-slave1:8848 nacos-slave2:8848 nacos-slave3:8848 nacos-slave4:8848
+      - MYSQL_SERVICE_HOST=mysql-master1
+      - MYSQL_SERVICE_PORT=3306
+      - MYSQL_SERVICE_DB_NAME=nacos
+      - MYSQL_SERVICE_USER=root
+      - MYSQL_SERVICE_PASSWORD=rootpassword
+    volumes:
+      - nacos_slave2_data:/home/nacos/data
+    depends_on:
+      - mysql-master1
+
+  nacos-slave3:
+    image: nacos/nacos-server:latest
+    container_name: nacos-slave3
+    ports:
+      - "8852:8848"
+    environment:
+      - MODE=cluster
+      - NACOS_SERVERS=nacos-master1:8848 nacos-master2:8848 nacos-slave1:8848 nacos-slave2:8848 nacos-slave3:8848 nacos-slave4:8848
+      - MYSQL_SERVICE_HOST=mysql-master2
+      - MYSQL_SERVICE_PORT=3306
+      - MYSQL_SERVICE_DB_NAME=nacos
+      - MYSQL_SERVICE_USER=root
+      - MYSQL_SERVICE_PASSWORD=rootpassword
+    volumes:
+      - nacos_slave3_data:/home/nacos/data
+    depends_on:
+      - mysql-master2
+
+  nacos-slave4:
+    image: nacos/nacos-server:latest
+    container_name: nacos-slave4
+    ports:
+      - "8853:8848"
+    environment:
+      - MODE=cluster
+      - NACOS_SERVERS=nacos-master1:8848 nacos-master2:8848 nacos-slave1:8848 nacos-slave2:8848 nacos-slave3:8848 nacos-slave4:8848
+      - MYSQL_SERVICE_HOST=mysql-master2
+      - MYSQL_SERVICE_PORT=3306
+      - MYSQL_SERVICE_DB_NAME=nacos
+      - MYSQL_SERVICE_USER=root
+      - MYSQL_SERVICE_PASSWORD=rootpassword
+    volumes:
+      - nacos_slave4_data:/home/nacos/data
+    depends_on:
+      - mysql-master2
+  # Kafka Master 1 (Controller + Broker)
+  # Kafka Controller 1
+  #  kafka-controller1:
+  #    image: confluentinc/cp-kafka:latest
+  #    container_name: kafka-controller1
+  #    ports:
+  #      - "9093:9093"
+  #    environment:
+  #      KAFKA_BROKER_ID: 1
+  #      KAFKA_PROCESS_ROLES: controller
+  #      KAFKA_NODE_ID: 1
+  #      KAFKA_LISTENERS: CONTROLLER://kafka-controller1:9093
+  ##      KAFKA_ADVERTISED_LISTENERS: ""
+  #      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+  #      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka-controller1:9093,2@kafka-controller2:9095
+  #      KAFKA_LOG_DIRS: /var/lib/kafka/data
+  #      CLUSTER_ID: ${KAFKA_CLUSTER_ID}
+  #    volumes:
+  #      - kafka_controller1_data:/var/lib/kafka/data
+  kafka-controller1:
+    image: confluentinc/cp-kafka:latest
+    container_name: kafka-controller1
+    ports:
+      - "9093:9093"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_PROCESS_ROLES: controller
+      KAFKA_NODE_ID: 1
+      KAFKA_LISTENERS: CONTROLLER://kafka-controller1:9093
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka-controller1:9093,2@kafka-controller2:9095
+      KAFKA_LOG_DIRS: /var/lib/kafka/data
+      CLUSTER_ID: ${KAFKA_CLUSTER_ID}
+    volumes:
+      - kafka_controller1_data:/var/lib/kafka/data
+
+  # Kafka Controller 2
+  kafka-controller2:
+    image: confluentinc/cp-kafka:latest
+    container_name: kafka-controller2
+    ports:
+      - "9095:9095"
+    environment:
+      KAFKA_BROKER_ID: 2
+      KAFKA_PROCESS_ROLES: controller
+      KAFKA_NODE_ID: 2
+      KAFKA_LISTENERS: CONTROLLER://kafka-controller2:9095
+      #      KAFKA_ADVERTISED_LISTENERS: ""
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka-controller1:9093,2@kafka-controller2:9095
+      KAFKA_LOG_DIRS: /var/lib/kafka/data
+      CLUSTER_ID: ${KAFKA_CLUSTER_ID}
+    volumes:
+      - kafka_controller2_data:/var/lib/kafka/data
+
+  # Kafka Broker 1
+  kafka-broker1:
+    image: confluentinc/cp-kafka:latest
+    container_name: kafka-broker1
+    ports:
+      - "9096:9092"
+    environment:
+      KAFKA_BROKER_ID: 3
+      KAFKA_PROCESS_ROLES: broker
+      KAFKA_NODE_ID: 3
+      KAFKA_LISTENERS: PLAINTEXT://kafka-broker1:9092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka-broker1:9096
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka-controller1:9093,2@kafka-controller2:9095
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LOG_DIRS: /var/lib/kafka/data
+      CLUSTER_ID: ${KAFKA_CLUSTER_ID}
+    volumes:
+      - kafka_broker1_data:/var/lib/kafka/data
+
+  # Kafka Broker 2
+  kafka-broker2:
+    image: confluentinc/cp-kafka:latest
+    container_name: kafka-broker2
+    ports:
+      - "9098:9092"
+    environment:
+      KAFKA_BROKER_ID: 4
+      KAFKA_PROCESS_ROLES: broker
+      KAFKA_NODE_ID: 4
+      KAFKA_LISTENERS: PLAINTEXT://kafka-broker2:9092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka-broker2:9098
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka-controller1:9093,2@kafka-controller2:9095
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LOG_DIRS: /var/lib/kafka/data
+      CLUSTER_ID: ${KAFKA_CLUSTER_ID}
+    volumes:
+      - kafka_broker2_data:/var/lib/kafka/data
+  mysql-master1:
+    image: mysql:8.0
+    container_name: mysql-master1
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_master1_data:/var/lib/mysql
+      - ./init-master.sql:/docker-entrypoint-initdb.d/init-master.sql  # 自动初始化 SQL
+    command: --server-id=1 --log-bin=mysql-bin --skip-grant-tables
+
+  mysql-master2:
+    image: mysql:8.0
+    container_name: mysql-master2
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+    ports:
+      - "3308:3306"
+    volumes:
+      - mysql_master2_data:/var/lib/mysql
+      - ./init-master.sql:/docker-entrypoint-initdb.d/init-master.sql  # 自动初始化 SQL
+    command: --server-id=2 --log-bin=mysql-bin --skip-grant-tables
+
+  mysql-slave1:
+    image: mysql:8.0
+    container_name: mysql-slave1
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_slave1_data:/var/lib/mysql
+    command: --server-id=3
+    depends_on:
+      - mysql-master1
+    entrypoint: >
+      sh -c "
+      echo 'Waiting for MySQL master to be ready...' &&
+      until mysqladmin ping -h mysql-master1 --silent; do sleep 5; done &&
+      mysql -h mysql-master1 -P 3306 -urepl -prootpassword -e '
+      STOP REPLICA;
+      RESET SLAVE ALL;
+      CHANGE MASTER TO
+        MASTER_HOST=\"mysql-master1\",
+        MASTER_USER=\"repl\",
+        MASTER_PASSWORD=\"rootpassword\",
+        MASTER_AUTO_POSITION=1;
+      START SLAVE;'
+      "
+  mysql-slave2:
+    image: mysql:8.0
+    container_name: mysql-slave2
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+    ports:
+      - "3309:3306"
+    volumes:
+      - mysql_slave2_data:/var/lib/mysql
+    command: --server-id=4
+    depends_on:
+      - mysql-master1
+    entrypoint: >
+      sh -c "
+      echo 'Waiting for MySQL master to be ready...' &&
+      until mysqladmin ping -h mysql-master1 --silent; do sleep 5; done &&
+      mysql -h mysql-master1 -P 3306 -urepl -prootpassword -e '
+      STOP REPLICA;
+      RESET SLAVE ALL;
+      CHANGE MASTER TO
+        MASTER_HOST=\"mysql-master1\",
+        MASTER_USER=\"repl\",
+        MASTER_PASSWORD=\"rootpassword\",
+        MASTER_AUTO_POSITION=1;
+      START SLAVE;'
+      "
+  mysql-slave3:
+    image: mysql:8.0
+    container_name: mysql-slave3
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+    ports:
+      - "3310:3306"
+    volumes:
+      - mysql_slave3_data:/var/lib/mysql
+    command: --server-id=5
+    depends_on:
+      - mysql-master2
+    entrypoint: >
+      sh -c "
+      echo 'Waiting for MySQL master to be ready...' &&
+      until mysqladmin ping -h mysql-master2 --silent; do sleep 5; done &&
+      mysql -h mysql-master2 -P 3308 -urepl -prootpassword -e '
+      STOP REPLICA;
+      RESET SLAVE ALL;
+      CHANGE MASTER TO
+        MASTER_HOST=\"mysql-master2\",
+        MASTER_USER=\"repl\",
+        MASTER_PASSWORD=\"rootpassword\",
+        MASTER_AUTO_POSITION=1;
+      START SLAVE;'
+      "
+  mysql-slave4:
+    image: mysql:8.0
+    container_name: mysql-slave4
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+    ports:
+      - "3311:3306"
+    volumes:
+      - mysql_slave4_data:/var/lib/mysql
+    command: --server-id=6
+    depends_on:
+      - mysql-master2
+    entrypoint: >
+      sh -c "
+      echo 'Waiting for MySQL master to be ready...' &&
+      until mysqladmin ping -h mysql-master2 --silent; do sleep 5; done &&
+      mysql -h mysql-master2 -P 3308 -urepl -prootpassword -e '
+      STOP REPLICA;
+      RESET SLAVE ALL;
+      CHANGE MASTER TO
+        MASTER_HOST=\"mysql-master2\",
+        MASTER_USER=\"repl\",
+        MASTER_PASSWORD=\"rootpassword\",
+        MASTER_AUTO_POSITION=1;
+      START SLAVE;'
+      "
+
+  postgres-master1:
+    image: postgres:15
+    container_name: postgres-master1
+    environment:
+      POSTGRES_PASSWORD: rootpassword
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_master1_data:/var/lib/postgresql/data
+      - ./pg_hba.conf:/var/lib/postgresql/data/pg_hba.conf
+    command: postgres -c wal_level=replica -c max_wal_senders=5 -c max_replication_slots=5 -c hba_file=/var/lib/postgresql/data/pg_hba.conf
+  postgres-slave1:
+    image: postgres:15
+    container_name: postgres-slave1
+    environment:
+      POSTGRES_PASSWORD: rootpassword
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_slave1_data:/var/lib/postgresql/data
+      - ./pgpass:/var/lib/postgresql/.pgpass  # Mount the .pgpass file
+    command: postgres -c wal_level=replica -c max_wal_senders=5 -c max_replication_slots=5
+    depends_on:
+      - postgres-master1
+    entrypoint: >
+      sh -c "
+      echo 'Waiting for PostgreSQL master to be ready...' &&
+      until pg_isready -h postgres-master1 -p 5432; do sleep 5; done &&
+      rm -rf /var/lib/postgresql/data/* &&
+      pg_basebackup -h postgres-master1 -D /var/lib/postgresql/data -U postgres -v -P --wal-method=stream &&
+      echo 'standby_mode = on' >> /var/lib/postgresql/data/recovery.conf &&
+      echo 'primary_conninfo = \"host=postgres-master1 port=5432 user=postgres password=rootpassword\"' >> /var/lib/postgresql/data/recovery.conf &&
+      echo 'trigger_file = \"/tmp/postgresql.trigger.5432\"' >> /var/lib/postgresql/data/recovery.conf &&
+      chown -R postgres:postgres /var/lib/postgresql/data &&
+      su - postgres -c '/usr/lib/postgresql/15/bin/pg_ctl -D /var/lib/postgresql/data -l /var/lib/postgresql/data/logfile start'
+      "
 volumes:
-  nacos_data:
+  nacos_master1_data:
+  nacos_master2_data:
+  nacos_slave1_data:
+  nacos_slave2_data:
+  nacos_slave3_data:
+  nacos_slave4_data:
+  kafka_controller1_data:
+  kafka_controller2_data:
+  kafka_broker1_data:
+  kafka_broker2_data:
+  mysql_master1_data:
+  mysql_master2_data:
+  mysql_slave1_data:
+  mysql_slave2_data:
+  mysql_slave3_data:
+  mysql_slave4_data:
+  postgres_master1_data:
+  postgres_slave1_data:

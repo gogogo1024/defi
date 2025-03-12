@@ -2,6 +2,7 @@ package eventbus
 
 import (
 	"defi/internal/model"
+	"fmt"
 	"github.com/nats-io/nats.go"
 )
 
@@ -12,13 +13,19 @@ type NatsEventBus struct {
 func NewNatsEventBus(url string) (EventBus, error) {
 	conn, err := nats.Connect(url)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("NATS connection error: %w", err)
 	}
 	return &NatsEventBus{conn: conn}, nil
 }
 
 func (eb *NatsEventBus) PublishEvent(topic string, event []byte) error {
-	return eb.conn.Publish(topic, event)
+	err := eb.conn.Publish(topic, event)
+	if err != nil {
+		logError("NATS", topic, err)
+		return fmt.Errorf("NATS publish error: %w", err)
+	}
+	logSuccess("NATS", topic, event)
+	return nil
 }
 
 func (eb *NatsEventBus) ConsumerEvent(topic string, handler func(event model.Event)) error {
@@ -28,5 +35,9 @@ func (eb *NatsEventBus) ConsumerEvent(topic string, handler func(event model.Eve
 		}
 		handler(event)
 	})
-	return err
+	if err != nil {
+		logError("NATS", topic, err)
+		return fmt.Errorf("NATS subscription error: %w", err)
+	}
+	return nil
 }
